@@ -1,4 +1,4 @@
 # Sudoku solver
-##versions:
+## versions:
 * python with PySimpleGUI
-* HTML/Javascript
+* [HTML/Javascript](sudoku.html)
