@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Sudoku</title>
+</head>
+<body>
+<div id="sudoku_div">
+
+</div>
+<div>Status:<span id="STATE">SOLVING</span></div>
+<div>
+    <button id="STEP">step</button>
+    <label for="AUTO_SOLVE">auto:</label><input type="checkbox" id="AUTO_SOLVE">
+    <button id="NEXT">next</button>
+</div>
+</body>
+
+<style>
+    table, th, td {
+        border: 1px solid black;
+        border-collapse: collapse;
+    }
+    .bg-grey {
+        background: grey;
+    }
+    .bg-black {
+        background: black;
+    }
+    .bg-yellow {
+        background: yellow;
+    }
+    .bg-brown {
+        background: brown;
+    }
+</style>
+
+<script>
+    const sudoku_div = document.getElementById("sudoku_div");
+    const step_button = document.getElementById("STEP");
+    const auto_check = document.getElementById("AUTO_SOLVE");
+    const next_button = document.getElementById("NEXT");
+    const table_elem = document.createElement("table");
+    const state_field = document.getElementById("STATE");
+    sudoku_div.appendChild(table_elem);
+
+    const table_2 = [
+        [0, 0, 0, 0, 3, 5, 4, 7, 0,],
+        [0, 0, 0, 0, 7, 0, 0, 5, 0,],
+        [1, 5, 0, 0, 8, 0, 0, 0, 6,],
+        [0, 0, 0, 0, 0, 9, 0, 6, 2,],
+        [0, 0, 0, 0, 0, 0, 8, 0, 0,],
+        [2, 0, 0, 3, 0, 6, 0, 9, 0,],
+        [0, 0, 3, 0, 0, 7, 0, 1, 0,],
+        [6, 0, 4, 0, 0, 0, 7, 0, 0,],
+        [9, 0, 0, 0, 0, 0, 0, 0, 0,],
+    ];
+
+    const table_elements = [];
+    let row_elements;
+    let row;
+    for(let j=0; j<9; j++) {
+        row_elements = [];
+        row = document.createElement('tr');
+        for(let i=0; i<9; i++) {
+            col = document.createElement("td");
+            // val = table_2[j][i];
+            // if (val != 0) {
+            //     col.innerHTML = val;
+            //     col.classList.add("bg-grey");
+            // }
+            row_elements[i] = col;
+            row.appendChild(col);
+            if (i%3 == 2 && i<8) {
+                col = document.createElement("td");
+                col.classList.add("bg-black");
+                row.appendChild(col);
+            }
+        }
+        table_elem.appendChild(row);
+        table_elements[j] = row_elements;
+        if (j%3 == 2 && j<8) {
+            row = document.createElement("tr");
+            for(let i=0; i<11; i++) {
+                col = document.createElement("td");
+                col.classList.add("bg-black");
+                row.appendChild(col);
+            }
+            table_elem.appendChild(row);
+        }
+    }
+
+    function get_box_index(j, i) {
+        return j-j%3 + (i-i%3)/3;
+    }
+
+    const table = {
+        table: table_2,
+        elements: table_elements,
+        state_field: state_field,
+        stepcount: 0,
+        fixed: [],
+        track_i: 0,
+        track_j: 0,
+        state: "FORWARD",
+        row_sets: [],
+        col_sets: [],
+        box_sets: [],
+
+        init_fixed: function () {
+            for(let j=0; j<9; j++) {
+                this.fixed[j] = [];
+                for(let i=0; i<9; i++) {
+                    if (this.table[j][i])
+                        this.fixed[j][i] = true;
+                    else
+                        this.fixed[j][i] = false;
+                }
+            }
+        },
+
+        init_sets: function () {
+            for(let i=0; i<9; i++) {
+                this.row_sets[i] = this.row_set(i);
+                this.col_sets[i] = this.col_set(i);
+                this.box_sets[i] = this.box_set(i);
+            }
+        },
+
+        row_set: function (j) {
+            const rs = new Set();
+            for(let i=0; i<9; i++) {
+                if (this.table[j][i])
+                    rs.add(this.table[j][i])
+            }
+            return rs;
+        },
+
+        col_set: function (i) {
+            const cs = new Set();
+            for(let j=0; j<9; j++) {
+                if (this.table[j][i])
+                    cs.add(this.table[j][i])
+            }
+            return cs;
+        },
+
+        box_set: function (b) {
+            const bs = new Set();
+            const bi = b % 3;
+            const bj = (b-b%3) / 3;
+            for(let j=3*bj; j<3*bj+3; j++) {
+                for(let i=3*bi; i<3*bi+3; i++) {
+                    if (this.table[j][i])
+                        bs.add(this.table[j][i]);
+                }
+            }
+            return bs;
+        },
+
+        display_table: function () {
+            for(let j=0; j<9; j++) {
+                for (let i=0; i<9; i++) {
+                    if (this.table[j][i]) {
+                        this.elements[j][i].innerHTML = this.table[j][i];
+                    } else {
+                        this.elements[j][i].innerHTML = "";
+                    }
+                    if (this.track_i == i && this.track_j == j) {
+                        if (this.fixed[j][i]) {
+                            this.elements[j][i].classList.add("bg-brown");
+                            this.elements[j][i].classList.remove("bg-grey");
+                        } else {
+                            this.elements[j][i].classList.add("bg-yellow");
+                        }
+                    } else {
+                        if (this.fixed[j][i]) {
+                            this.elements[j][i].classList.remove("bg-brown");
+                            this.elements[j][i].classList.add("bg-grey");
+                        } else {
+                            this.elements[j][i].classList.remove("bg-yellow");
+                        }
+                    }
+                }
+            }
+            if (this.is_finished()) {
+                state_field.innerHTML = "FINISHED";
+            } else if (this.is_no_solution()) {
+                state_field.innerHTML = "NO SOLUTION";
+            } else {
+                state_field.innerHTML = "SOLVING";
+            }
+        },
+
+        next_cell: function () {
+            this.track_i += 1;
+            if (this.track_i > 8) {
+                this.track_i = 0;
+                this.track_j += 1;
+            }
+        },
+
+        prev_cell: function () {
+            this.track_i -= 1;
+            if (this.track_i < 0) {
+                this.track_i = 8;
+                this.track_j -= 1;
+            }
+        },
+
+        step_over_fixed: function () {
+            if (this.fixed[this.track_j][this.track_i]) {
+                console.log(`Fixed: ${this.track_j}, ${this.track_i}`);
+                if (this.state == "FORWARD") {
+                    this.next_cell();
+                } else if (this.state == "BACKTRACK") {
+                    this.prev_cell();
+                }
+                return true;
+            } else {
+                return false;
+            }
+        },
+
+        is_finished: function () {
+            return this.track_j > 8;
+        },
+
+        is_no_solution: function () {
+            return this.track_j < 0;
+        },
+
+        step: function () {
+            if (this.is_finished()) {
+                console.log("Finished");
+                return false;
+            }
+            if (this.is_no_solution()) {
+                console.log("No Solution");
+                return false;
+            }
+            this.stepcount += 1;
+            if (this.step_over_fixed())
+                return true;
+            let val = this.table[this.track_j][this.track_i];
+            if (val) {
+                this.row_sets[this.track_j].delete(val);
+                this.col_sets[this.track_i].delete(val);
+                this.box_sets[get_box_index(this.track_j, this.track_i)].delete(val);
+                this.table[this.track_j][this.track_i] = 0;
+            }
+            if (val == 9) {
+                console.log(`Backtrack: ${this.track_j}, ${this.track_i}`);
+                this.prev_cell();
+                this.state = "BACKTRACK";
+            } else {
+                this.state = "FORWARD";
+                let found = false;
+                while (!found) {
+                    val += 1;
+                    if (val > 9) {
+                        console.log(`Backtrack: ${this.track_j}, ${this.track_i}`);
+                        this.prev_cell();
+                        this.state = "BACKTRACK";
+                        found = true;
+                        break;
+                    }
+                    if (this.row_sets[this.track_j].has(val)) {
+//                        console.log(`step: ${this.track_j}, ${this.track_i}: ${val} already in row`);
+                    } else if (this.col_sets[this.track_i].has(val)) {
+//                        console.log(`step: ${this.track_j}, ${this.track_i}: ${val} already in col`);
+                    } else if (this.box_sets[get_box_index(this.track_j, this.track_i)].has(val)) {
+//                        console.log(`step: ${this.track_j}, ${this.track_i}: ${val} already in box ${get_box_index(this.track_j, this.track_i)}`);
+                    } else {
+                        this.row_sets[this.track_j].add(val);
+                        this.col_sets[this.track_i].add(val);
+                        this.box_sets[get_box_index(this.track_j, this.track_i)].add(val);
+                        this.table[this.track_j][this.track_i] = val;
+                        this.next_cell();
+                        found = true;
+                    }
+                }
+            }
+            return true;
+        },
+
+    };
+
+    table.init_fixed();
+    table.init_sets();
+    table.display_table();
+
+    function auto_step() {
+        if (table.is_finished() || table.is_no_solution()) {
+            console.log("auto disabled");
+            return;
+        }
+        while (table.step()) {
+            if (table.stepcount % 1000 == 0)
+                break;
+        }
+        table.display_table();
+        if (auto_check.checked) {
+          setTimeout(auto_step, 0);
+        }
+    }
+
+    step_button.onclick = () => {table.step(); table.display_table()};
+    auto_check.onchange = () => {
+        if (auto_check.checked) {
+          setTimeout(auto_step, 0);
+        }
+    };
+    next_button.onclick = () => {
+        table.prev_cell();
+        table.state="BACKTRACK";
+        table.step();
+        table.display_table();
+        if (auto_check.checked) {
+          setTimeout(auto_step, 0);
+        }
+    };
+
+</script>
+
+</html>
