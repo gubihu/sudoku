@@ -162,9 +162,9 @@
             for(let j=0; j<9; j++) {
                 for (let i=0; i<9; i++) {
                     if (this.table[j][i]) {
-                        this.elements[j][i].innerHTML = this.table[j][i];
+                        this.elements[j][i].textContent = this.table[j][i];
                     } else {
-                        this.elements[j][i].innerHTML = "";
+                        this.elements[j][i].textContent = "";
                     }
                     if (this.track_i == i && this.track_j == j) {
                         if (this.fixed[j][i]) {
@@ -184,11 +184,11 @@
                 }
             }
             if (this.is_finished()) {
-                state_field.innerHTML = "FINISHED";
+                state_field.textContent = "FINISHED";
             } else if (this.is_no_solution()) {
-                state_field.innerHTML = "NO SOLUTION";
+                state_field.textContent = "NO SOLUTION";
             } else {
-                state_field.innerHTML = "SOLVING";
+                state_field.textContent = "SOLVING";
             }
         },
 
