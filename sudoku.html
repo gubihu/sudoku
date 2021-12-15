@@ -5,11 +5,11 @@
     <title>Sudoku</title>
 </head>
 <body>
-<div id="sudoku_div">
+<div id="sudoku_div" class="sudoku">
 
 </div>
-<div>Status:<span id="STATE">SOLVING</span></div>
-<div>
+<div class="status">Status:<span id="STATE">SOLVING</span></div>
+<div class="buttons">
     <button id="STEP">step</button>
     <label for="AUTO_SOLVE">auto:</label><input type="checkbox" id="AUTO_SOLVE">
     <button id="NEXT">next</button>
@@ -20,6 +20,12 @@
     table, th, td {
         border: 1px solid black;
         border-collapse: collapse;
+    }
+    table {
+        width: 100%;
+    }
+    .cell-head {
+        width: 20px;
     }
     .bg-grey {
         background: grey;
@@ -33,9 +39,26 @@
     .bg-brown {
         background: brown;
     }
+    body {
+        width: 300px;
+        background: azure;
+        margin: auto;
+        text-align: center;
+    }
+    .sudoku {
+        width: 200px;
+        margin: 10px auto;
+        background: antiquewhite;
+    }
+    .status {
+    }
+    .buttons {
+    }
 </style>
 
 <script>
+    const queryString = window.location.search;
+    const urlParams = new URLSearchParams(queryString);
     const sudoku_div = document.getElementById("sudoku_div");
     const step_button = document.getElementById("STEP");
     const auto_check = document.getElementById("AUTO_SOLVE");
@@ -43,6 +66,10 @@
     const table_elem = document.createElement("table");
     const state_field = document.getElementById("STATE");
     sudoku_div.appendChild(table_elem);
+
+    if (urlParams.has("table")) {
+        console.log(urlParams.get("table"));
+    }
 
     const table_2 = [
         [0, 0, 0, 0, 3, 5, 4, 7, 0,],
@@ -56,12 +83,41 @@
         [9, 0, 0, 0, 0, 0, 0, 0, 0,],
     ];
 
+    function vsep(row, type="td") {
+        let col = document.createElement(type);
+        col.classList.add("bg-black");
+        row.appendChild(col);
+    }
+
+    function hsep(table) {
+        row = document.createElement("tr");
+        for(let i=0; i<13; i++) {
+            vsep(row);
+        }
+        table.appendChild(row);
+    }
+
+    let th;
     const table_elements = [];
     let row_elements;
     let row;
+    row = document.createElement('tr');
+    vsep(row, "th");
+    for(let i=0; i<9; i++) {
+        th = document.createElement("th");
+        th.classList.add("bg-black");
+        row.appendChild(th);
+        if (i%3 == 2 && i<8) {
+            vsep(row, "th");
+        }
+    }
+    vsep(row, "th");
+    table_elem.appendChild(row)
+//    hsep(table_elem);
     for(let j=0; j<9; j++) {
         row_elements = [];
         row = document.createElement('tr');
+        vsep(row);
         for(let i=0; i<9; i++) {
             col = document.createElement("td");
             // val = table_2[j][i];
@@ -72,23 +128,17 @@
             row_elements[i] = col;
             row.appendChild(col);
             if (i%3 == 2 && i<8) {
-                col = document.createElement("td");
-                col.classList.add("bg-black");
-                row.appendChild(col);
+                vsep(row);
             }
         }
+        vsep(row);
         table_elem.appendChild(row);
         table_elements[j] = row_elements;
         if (j%3 == 2 && j<8) {
-            row = document.createElement("tr");
-            for(let i=0; i<11; i++) {
-                col = document.createElement("td");
-                col.classList.add("bg-black");
-                row.appendChild(col);
-            }
-            table_elem.appendChild(row);
+            hsep(table_elem);
         }
     }
+    hsep(table_elem);
 
     function get_box_index(j, i) {
         return j-j%3 + (i-i%3)/3;
