@@ -55,6 +55,18 @@ table_3 = [
     [0, 0, 0, 2, 8, 0, 0, 0, 0, ],
 ]
 
+table_4 = [
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, ],
+    [0, 0, 9, 8, 0, 0, 0, 0, 7, ],
+    [0, 8, 0, 0, 6, 0, 0, 5, 0, ],
+    [0, 5, 0, 0, 4, 0, 0, 3, 0, ],
+    [0, 0, 7, 9, 0, 0, 0, 0, 2, ],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, ],
+    [0, 0, 2, 7, 0, 0, 0, 0, 9, ],
+    [0, 4, 0, 0, 5, 0, 0, 6, 0, ],
+    [3, 0, 0, 0, 0, 6, 2, 0, 0, ],
+]
+
 def create_layout():
     layout = []
     for j in range(0,9):
@@ -227,7 +239,7 @@ def main():
 
     layout = create_layout()
     window = sg.Window(title="Sudoku Solver", layout=layout, finalize=True)
-    table = Sudoku(table_2)
+    table = Sudoku(table_4)
 
     table.display_table(window)
 
